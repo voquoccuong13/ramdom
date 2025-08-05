@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vòng quay chọn món ăn</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Hiệu ứng nền động */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
+        }
+
+        .title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 100;
+            position: relative;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            z-index: 10;
+            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.3));
+        }
+
+        #pointer {
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 40px solid #ff4757;
+            position: absolute;
+            top: -45px;
+            left: calc(50% - 25px);
+            z-index: 20;
+            filter: drop-shadow(0 3px 8px rgba(255, 71, 87, 0.5));
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 6px solid #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 0 0 3px rgba(255,255,255,0.3),
+                0 15px 40px rgba(0,0,0,0.3),
+                inset 0 0 20px rgba(0,0,0,0.1);
+            transition: transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            background: conic-gradient(from 0deg, 
+                #ff6b6b, #feca57, #48dbfb, #ff9ff3, #54a0ff,
+                #5f27cd, #00d2d3, #ff9f43, #10ac84, #ee5a24);
+        }
+
+        .segment {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            left: 50%;
+            top: 50%;
+            transform-origin: 0% 0%;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 40px;
+        }
+
+        .segment:nth-child(1) { background: linear-gradient(135deg, #ff6b6b, #ee5a52); }
+        .segment:nth-child(2) { background: linear-gradient(135deg, #feca57, #ff9f43); }
+        .segment:nth-child(3) { background: linear-gradient(135deg, #48dbfb, #0abde3); }
+        .segment:nth-child(4) { background: linear-gradient(135deg, #ff9ff3, #f368e0); }
+        .segment:nth-child(5) { background: linear-gradient(135deg, #54a0ff, #2e86de); }
+        .segment:nth-child(6) { background: linear-gradient(135deg, #5f27cd, #341f97); }
+        .segment:nth-child(7) { background: linear-gradient(135deg, #00d2d3, #01a3a4); }
+        .segment:nth-child(8) { background: linear-gradient(135deg, #ff9f43, #ee5a24); }
+        .segment:nth-child(9) { background: linear-gradient(135deg, #10ac84, #01a3a4); }
+        .segment:nth-child(10) { background: linear-gradient(135deg, #ee5a24, #c44569); }
+
+        .segment span {
+            transform: rotate(calc(-1 * var(--angle) * 1deg / 2));
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 
+                0 2px 4px rgba(0,0,0,0.5),
+                0 0 10px rgba(0,0,0,0.3);
+            width: 120px;
+            line-height: 1.2;
+            letter-spacing: 0.5px;
+        }
+
+        .controls {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 10;
+            position: relative;
+        }
+
+        button {
+            padding: 15px 35px;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 8px 25px rgba(255, 107, 107, 0.4),
+                0 0 0 0 rgba(255, 107, 107, 0.7);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #ee5a52, #ff6b6b);
+            transform: translateY(-3px);
+            box-shadow: 
+                0 12px 35px rgba(255, 107, 107, 0.5),
+                0 0 0 10px rgba(255, 107, 107, 0.1);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.3);
+        }
+
+        .result {
+            margin-top: 25px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            text-align: center;
+            text-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            padding: 15px 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ffffff, #f1f2f6);
+            border-radius: 50%;
+            z-index: 15;
+            box-shadow: 
+                0 0 20px rgba(0,0,0,0.2),
+                inset 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .title {
+                font-size: 2rem;
+                margin-bottom: 20px;
+            }
+            
+            .wheel-container {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .segment {
+                width: 150px;
+                height: 150px;
+                padding-top: 30px;
+            }
+            
+            .segment span {
+                font-size: 14px;
+                width: 90px;
+            }
+            
+            .center-circle {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+            
+            button {
+                padding: 12px 28px;
+                font-size: 18px;
+            }
+            
+            .result {
+                font-size: 20px;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+  </head>
+  <body>
+    <h1 class="title">🍽️ Vòng Quay Chọn Món Ăn</h1>
+
+    <div class="wheel-container">
+      <div id="pointer"></div>
+      <div class="wheel" id="wheel">
+        <div class="center-circle">🎯</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button onclick="spin()" id="spinBtn">🎲 Quay Ngay</button>
+      <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const dishes = [
+            "Bún đậu HD2", "Mì cay", "Bánh canh cua", "Bánh canh cá lóc", "Bún đậu Q9",
+            "Lẩu chay", "Lẩu gà", "Bún bò"
+        ];
+
+        const wheel = document.getElementById("wheel");
+        const result = document.getElementById("result");
+        const spinBtn = document.getElementById("spinBtn");
+        const numItems = dishes.length;
+        const degPerItem = 360 / numItems;
+        let currentRotation = 0;
+        let isSpinning = false;
+
+        // Xóa nội dung cũ (trừ center-circle)
+        const centerCircle = wheel.querySelector('.center-circle');
+        wheel.innerHTML = "";
+        wheel.appendChild(centerCircle);
+
+        // Tạo các segment
+        dishes.forEach((dish, i) => {
+            const segment = document.createElement("div");
+            segment.className = "segment";
+            segment.style.transform = `rotate(${i * degPerItem}deg)`;
+            segment.style.setProperty('--angle', degPerItem);
+
+            const span = document.createElement("span");
+            span.innerText = dish;
+
+            segment.appendChild(span);
+            wheel.appendChild(segment);
+        });
+
+function spin() {
+    if (isSpinning) return;
+
+    isSpinning = true;
+    spinBtn.disabled = true;
+    spinBtn.innerText = "🌪️ Đang quay...";
+    result.classList.remove('show');
+
+    const baseRotation = 360 * (10 + Math.random() * 5); // 10–15 vòng
+    const randomOffset = Math.floor(Math.random() * 360); // độ lệch ngẫu nhiên
+    const finalRotation = baseRotation + randomOffset;
+
+    currentRotation += finalRotation;
+    wheel.style.transition = 'transform 4s cubic-bezier(0.33, 1, 0.68, 1)';
+    wheel.style.transform = `rotate(${currentRotation}deg)`;
+}
+
+wheel.addEventListener('transitionend', () => {
+    const normalizedRotation = currentRotation % 360;
+    const selectedIndex = Math.floor((360 - normalizedRotation + degPerItem / 2) % 360 / degPerItem);
+    const selectedDish = dishes[selectedIndex];
+
+    result.innerHTML = `🎉 Hôm nay ăn: <strong>${selectedDish}</strong>! 😋`;
+    result.classList.add('show');
+
+    isSpinning = false;
+    spinBtn.disabled = false;
+    spinBtn.innerText = "🎲 Quay Lại";
+});
+
+    </script>
+  </body>
+</html>
